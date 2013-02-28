@@ -159,3 +159,5 @@ Each type added to ESIndex instance has following methods:
         */
     });
 ```
+
+## more coming soon...
