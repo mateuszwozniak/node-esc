@@ -12,6 +12,13 @@
         "chai": "*",
         "nock": "*"
     },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/mateuszwozniak/node-esc.git"
+    },
+    "engines": {
+        "node": ">= 0.4.0"
+    },
     "scripts": {
         "test": "./node_modules/.bin/mocha --reporter spec"
     }
