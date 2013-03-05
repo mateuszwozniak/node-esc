@@ -21,7 +21,8 @@ esi.tweet.getById(tweetId, function (err, tweet) {
 
 ## API
 Each type added to ESIndex instance has following methods:
-###getByIdRaw(id, callback) - get document by id (http://www.elasticsearch.org/guide/reference/api/get.html) (number or string) and pass raw data retrieved from ElasticSearch.
+###getByIdRaw(id, callback)
+get document by id (http://www.elasticsearch.org/guide/reference/api/get.html) (number or string) and pass raw data retrieved from ElasticSearch.
 ```javascript
     esi.tweet.getByIdRaw(1, function (err, doc) {
         console.log(doc);
@@ -42,7 +43,8 @@ Each type added to ESIndex instance has following methods:
         */
     });
 ```
-###getById(id, callback) - get document by id, but return only document content (_source property from result) or null if document does not exist.
+###getById(id, callback)
+get document by id, but return only document content (_source property from result) or null if document does not exist.
 ```javascript
     esi.tweet.getById(1, function (err, doc) {
         console.log(doc);
@@ -58,7 +60,8 @@ Each type added to ESIndex instance has following methods:
     });
 ```
 
-###mGetByIdRaw(ids, callback) - get multiple documents by array of ids () and return whole ElasticSearch response
+###mGetByIdRaw(ids, callback)
+get multiple documents by array of ids () and return whole ElasticSearch response
 ```javascript
     esi.tweet.mGetByIdRaw([1, 2], function (err, docs) {
         console.log(docs);
@@ -90,7 +93,8 @@ Each type added to ESIndex instance has following methods:
     });
 ```
 
-###mGetByIdRaw(ids, callback) - get multiple documents by array of ids () and return only content of existing documents (as array)
+###mGetByIdRaw(ids, callback)
+get multiple documents by array of ids () and return only content of existing documents (as array)
 ```javascript
     esi.tweet.mGetByIdRaw([1, 2], function (err, docs) {
         console.log(docs);
@@ -108,7 +112,8 @@ Each type added to ESIndex instance has following methods:
     });
 ```
 
-###searchRaw(searchConfig, callback) - execute search in type, with searchConfig passed as request body (http://www.elasticsearch.org/guide/reference/api/search/request-body.html) and return raw ElasticSearch reponse
+###searchRaw(searchConfig, callback)
+execute search in type, with searchConfig passed as request body (http://www.elasticsearch.org/guide/reference/api/search/request-body.html) and return raw ElasticSearch reponse
 ```javascript
     esi.tweet.searchRaw({query: {term: {message: 'foo'}}}, function (err, results) {
         console.log(results);
@@ -142,7 +147,8 @@ Each type added to ESIndex instance has following methods:
     });
 ```
 
-###search(searchConfig, callback) - execute search in type with search config passed as request body and return only content objects of hits array
+###search(searchConfig, callback)
+execute search in type with search config passed as request body and return only content objects of hits array
 ```javascript
     esi.tweet.search({query: {term: {message: 'foo'}}}, function (err, results) {
         console.log(results);
