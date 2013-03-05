@@ -3,7 +3,7 @@
     "description": "node elasticsearch client",
     "tags": ["elasticsearch", "elastic", "search"],
     "author": "Mateusz Wozniak <mateusz@wozniak.io>",
-    "version": "0.0.1",
+    "version": "0.0.11",
     "dependencies": {
         "request": "*"
     },

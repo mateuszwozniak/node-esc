@@ -55,8 +55,12 @@ ESRequest.prototype = {
 var respOkRegexp = /^2/;
 function makeRequest(type, config) {
     var reqConfig = {
-        json: config.data || true
+        json: true
     };
+
+    if (config.data) {
+        reqConfig.body = typeof config.data === 'object' ? JSON.stringify(config.data) : config.data;
+    }
 
     request[type](config.url, reqConfig, function (err, resp, body) {
         if (err || respOkRegexp.test(resp.statusCode)) {

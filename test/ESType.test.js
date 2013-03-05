@@ -292,7 +292,7 @@ describe('ESType', function () {
             });
         });
 
-        it('should first param as query object when if is an object', function (done) {
+        it('should pass first param as query object when if is an object', function (done) {
             var est = new ESType(esIndexConfig);
             var server = nock(esServerUrl)
                 .get('/myindex/people/', {_id: 1})

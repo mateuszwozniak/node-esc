@@ -39,7 +39,10 @@ describe('ESRequest', function () {
         });
 
         it('should call callback when request is finished', function (done) {
-            var server = nock(validConfig.esIndexUrl).get('/myindex/').reply(200);
+            var server = nock(validConfig.esIndexUrl)
+                .get('/myindex/')
+                .reply(200);
+
             var r = new ESRequest(validConfig);
             r.get(function () {
                 // timeout will fail the test when done won't be called
@@ -49,7 +52,9 @@ describe('ESRequest', function () {
 
         it('should call server with GET method', function (done) {
             var r = new ESRequest({esIndexUrl: 'http://example.com'});
-            var server = nock('http://example.com').get('/').reply(200);
+            var server = nock('http://example.com')
+                .get('/')
+                .reply(200);
 
             r.get(function (err, result) {
                 expect(server.isDone()).to.be.true;
@@ -72,6 +77,7 @@ describe('ESRequest', function () {
             var server = nock(validConfig.esIndexUrl)
                 .get('/myindex/')
                 .reply(500, error);
+
             var r = new ESRequest(validConfig);
 
             r.get(function (err, result) {
@@ -81,7 +87,10 @@ describe('ESRequest', function () {
         });
 
         it('should pass response body as json to callback', function (done) {
-            var server = nock(validConfig.esIndexUrl).get('/myindex/').reply(200, JSON.stringify({success: true}));
+            var server = nock(validConfig.esIndexUrl)
+                .get('/myindex/')
+                .reply(200, JSON.stringify({success: true}));
+
             var r = new ESRequest(validConfig);
             r.get(function (err, resp) {
                 expect(resp.success).to.be.true;
@@ -124,6 +133,7 @@ describe('ESRequest', function () {
                 done();
             });
         });
+
     });
 
     describe('post()', function () {
