@@ -11,8 +11,17 @@ var esIndexConfig = {
     typeName: 'people'
 };
 
-describe('ESType', function () {
+function skipArgsInPath(path) {
+    if (/myindex\/people/.test(path)) {
+        return '/myindex/people/';
+    }
+}
 
+function skipRequestBody(body) {
+    return undefined;
+}
+
+describe('ESType', function () {
 
     it('should throw error when config was not passed', function () {
         expect(function () { new ESType(); }).to.throw(TypeError);
@@ -26,21 +35,121 @@ describe('ESType', function () {
         expect(function () { new ESType({esIndexUrl: 'test'}); }).to.throw(TypeError);
     });
 
-    describe('getByIdRaw()', function () {
+    describe('index()', function () {
+
+        it('should call server with PUT request', function (done) {
+            var est = new ESType(esIndexConfig);
+            var server = nock(esServerUrl)
+                .filteringPath(skipArgsInPath)
+                .filteringRequestBody(skipRequestBody)
+                .put('/myindex/people/')
+                .reply(200);
+
+            est.index({}, function (err, result) {
+                expect(server.isDone()).to.be.true;
+                done();
+            });
+        });
+
+        it('should add document _id on the end of url when document has set _id', function (done) {
+            var est = new ESType(esIndexConfig);
+            var server = nock(esServerUrl)
+                .filteringRequestBody(skipRequestBody)
+                .put('/myindex/people/1')
+                .reply(200);
+
+            est.index({_id: 1}, function (err, result) {
+                expect(server.isDone()).to.be.true;
+                done();
+            });
+        });
+
+        it('should send passed data to server', function (done) {
+            var est = new ESType(esIndexConfig);
+            var data = {_id: 1, foo: 'bar'};
+            var server = nock(esServerUrl)
+                .put('/myindex/people/1', data)
+                .reply(200);
+
+            est.index(data, function (err, result) {
+                expect(server.isDone()).to.be.true;
+                done();
+            });
+        });
+    });
+
+    describe('delete()', function () {
+
+        it('should call server with DELETE request', function (done) {
+            var est = new ESType(esIndexConfig);
+            var server = nock(esServerUrl)
+                .filteringPath(skipArgsInPath)
+                .filteringRequestBody(skipRequestBody)
+                .delete('/myindex/people/')
+                .reply(200);
+
+            est.delete(1, function (err, result) {
+                expect(server.isDone()).to.be.true;
+                done();
+            });
+        });
+
+        it('should add first param as id to url when it is string', function (done) {
+            var est = new ESType(esIndexConfig);
+            var server = nock(esServerUrl)
+                .filteringRequestBody(skipRequestBody)
+                .delete('/myindex/people/1')
+                .reply(200);
+
+            est.delete('1', function (err, result) {
+                expect(server.isDone()).to.be.true;
+                done();
+            });
+        });
+
+        it('should add first param as id to url when it is number', function (done) {
+            var est = new ESType(esIndexConfig);
+            var server = nock(esServerUrl)
+                .filteringRequestBody(skipRequestBody)
+                .delete('/myindex/people/1')
+                .reply(200);
+
+            est.delete(1, function (err, result) {
+                expect(server.isDone()).to.be.true;
+                done();
+            });
+        });
+
+        it('should add _id property as id to url when first param is object', function (done) {
+            var est = new ESType(esIndexConfig);
+            var server = nock(esServerUrl)
+                .filteringRequestBody(skipRequestBody)
+                .delete('/myindex/people/1')
+                .reply(200);
+
+            est.delete({_id: 1}, function (err, result) {
+                expect(server.isDone()).to.be.true;
+                done();
+            });
+        });
+
+        it('should throw error when passed document does not have _id', function () {
+            var est = new ESType(esIndexConfig);
+            expect(function () { est.delete({}, function () {}); }).to.throw(TypeError);
+        });
+    });
+
+    describe('getById()', function () {
 
         it('should call index with correct type name', function (done) {
             var est = new ESType(esIndexConfig);
             var server = nock(esServerUrl)
                 // check only path to be index_name/type_name, the rest of url does not matter
-                .filteringPath(function (path) {
-                    if (/myindex\/people/.test(path)) {
-                        return '/myindex/people/';
-                    }
-                })
+                .filteringPath(skipArgsInPath)
                 .get('/myindex/people/')
                 .reply(200);
 
-            est.getByIdRaw(1, function (err, data) {
+            est.getById(1, function (err, data) {
                 expect(server.isDone()).to.be.true;
                 done();
             });
@@ -52,7 +161,7 @@ describe('ESType', function () {
                 .get('/myindex/people/1')
                 .reply(200);
 
-            est.getByIdRaw(1, function (err, data) {
+            est.getById(1, function (err, data) {
                 expect(server.isDone()).to.be.true;
                 done();
             });
@@ -65,7 +174,7 @@ describe('ESType', function () {
                 .get('/myindex/people/1')
                 .reply(200, resp);
 
-            est.getByIdRaw(1, function (err, data) {
+            est.getById(1, function (err, data) {
                 expect(data).to.deep.equal(resp);
                 done();
             });
@@ -74,51 +183,22 @@ describe('ESType', function () {
         it('should throw error when passed id is not string or number', function () {
             var est = new ESType(esIndexConfig);
             expect(function () {
-                est.getByIdRaw({}, function () {});
+                est.getById({}, function () {});
             }).to.throw(TypeError);
         });
     });
 
-    describe('getById()', function () {
-
-        it('should return null when document does not exists', function (done) {
-            var est = new ESType(esIndexConfig);
-            var resp = {exists: false};
-            var server = nock(esServerUrl)
-                .get('/myindex/people/1')
-                .reply(200, resp);
-
-            est.getById(1, function (err, doc) {
-                expect(doc).to.be.a('null');
-                done();
-            });
-        });
-
-        it('should return content of _source property when document exists', function (done) {
-            var est = new ESType(esIndexConfig);
-            var resp = {_id: 1, foo: 'bar'};
-            var server = nock(esServerUrl)
-                .get('/myindex/people/1')
-                .reply(200, {exists: true, _source: resp});
-
-            est.getById(1, function (err, doc) {
-                expect(doc).to.deep.equal(resp);
-                done();
-            });
-        });
-    });
-
-    describe('mGetByIdRaw()', function () {
+    describe('mGetById()', function () {
 
         it('should call es with _mget param', function (done) {
             var est = new ESType(esIndexConfig);
             var server = nock(esServerUrl)
                 // skip parameters
-                .filteringRequestBody(function (body) { return undefined; })
+                .filteringRequestBody(skipRequestBody)
                 .get('/myindex/people/_mget')
                 .reply(200);
 
-            est.mGetByIdRaw([], function (err, data) {
+            est.mGetById([], function (err, data) {
                 expect(server.isDone()).to.be.true;
                 done();
             });
@@ -126,7 +206,7 @@ describe('ESType', function () {
 
         it('should throw error when first parameter is not an array', function () {
             var est = new ESType(esIndexConfig);
-            expect(function () { est.mGetByIdRaw(1); }).to.throw(TypeError);
+            expect(function () { est.mGetById(1); }).to.throw(TypeError);
         });
 
         it('should return raw response from es index', function (done) {
@@ -136,7 +216,7 @@ describe('ESType', function () {
                 .get('/myindex/people/_mget', {ids: [0]})
                 .reply(200, resp);
 
-            est.mGetByIdRaw([0], function (err, data) {
+            est.mGetById([0], function (err, data) {
                 expect(data).to.deep.equal(resp);
                 done();
             });
@@ -149,55 +229,24 @@ describe('ESType', function () {
                 .get('/myindex/people/_mget', {ids: [0]})
                 .reply(200, resp);
 
-            est.mGetByIdRaw([0], function (err, data) {
+            est.mGetById([0], function (err, data) {
                 expect(data.docs).to.have.length(2);
                 done();
             });
         });
     });
 
-    describe('mGetById()', function () {
-
-        it('should return empty array when requested documents do not exist', function (done) {
-            var est = new ESType(esIndexConfig);
-            var resp = {docs: [{_id: 1, exists: false}, {_id: 2, exists: false}]};
-            var server = nock(esServerUrl)
-                .get('/myindex/people/_mget', {ids: [1,2]})
-                .reply(200, resp);
-
-            est.mGetById([1,2], function (err, docs) {
-                expect(docs).to.be.an('array');
-                expect(docs).to.have.length(0);
-                done();
-            });
-        });
-
-        it('should return array without documents that do not exist', function (done) {
-            var est = new ESType(esIndexConfig);
-            var resp = {docs: [{_id: 1, exists: false}, {_id: 2, exists: true, _source: {}}]};
-            var server = nock(esServerUrl)
-                .get('/myindex/people/_mget', {ids: [1,2]})
-                .reply(200, resp);
-
-            est.mGetById([1,2], function (err, docs) {
-                expect(docs).to.be.an('array');
-                expect(docs).to.have.length(1);
-                done();
-            });
-        });
-    });
-
-    describe('mGetRaw()', function () {
+    describe('mGet()', function () {
 
         it('should call es with _mget param', function (done) {
             var est = new ESType(esIndexConfig);
             var server = nock(esServerUrl)
                 // skip parameters
-                .filteringRequestBody(function (body) { return undefined; })
+                .filteringRequestBody(skipRequestBody)
                 .get('/myindex/people/_mget')
                 .reply(200);
 
-            est.mGetRaw([], function (err, data) {
+            est.mGet([], function (err, data) {
                 expect(server.isDone()).to.be.true;
                 done();
             });
@@ -214,7 +263,7 @@ describe('ESType', function () {
                 .get('/myindex/people/_mget', {docs: [{}]})
                 .reply(200);
 
-            est.mGetRaw([{}], function (err, data) {
+            est.mGet([{}], function (err, data) {
                 expect(server.isDone()).to.be.true;
                 done();
             });
@@ -227,7 +276,7 @@ describe('ESType', function () {
                 .get('/myindex/people/_mget', {docs: [{_id: 1}]})
                 .reply(200, resp);
 
-            est.mGetRaw([{_id: 1}], function (err, data) {
+            est.mGet([{_id: 1}], function (err, data) {
                 expect(data).to.deep.equal(resp);
                 done();
             });
@@ -240,43 +289,43 @@ describe('ESType', function () {
                 .get('/myindex/people/_mget', {docs: [{}, {}]})
                 .reply(200, resp);
 
-            est.mGetRaw([{}, {}], function (err, data) {
+            est.mGet([{}, {}], function (err, data) {
                 expect(data.docs).to.have.length(2);
                 done();
             });
         });
     });
 
-    describe('mGet()', function () {
 
-        it('should return empty array when requested documents do not exist', function (done) {
+    describe('update()', function () {
+        it('should call server with POST request', function (done) {
             var est = new ESType(esIndexConfig);
-            var resp = {docs: [{_id: 1, exists: false}, {_id: 2, exists: false}]};
             var server = nock(esServerUrl)
-                .get('/myindex/people/_mget', {docs: [{_id:1},{_id:2}]})
-                .reply(200, resp);
+                .filteringPath(skipArgsInPath)
+                .filteringRequestBody(skipRequestBody)
+                .post('/myindex/people/')
+                .reply(200);
 
-            est.mGet([{_id: 1}, {_id:2}], function (err, docs) {
-                expect(docs).to.be.an('array');
-                expect(docs).to.have.length(0);
+            est.update('1', {}, function (err, result) {
+                expect(server.isDone()).to.be.true;
                 done();
             });
         });
 
-        it('should return array without documents that do not exist', function (done) {
+        it('should call server with id and _update method in url', function (done) {
             var est = new ESType(esIndexConfig);
-            var resp = {docs: [{_id: 1, exists: false}, {_id: 2, exists: true, _source: {}}]};
+            var data = {_id: 1, foo: 'bar'};
             var server = nock(esServerUrl)
-                .get('/myindex/people/_mget', {docs: [{_id:1},{_id:2}]})
-                .reply(200, resp);
+                .post('/myindex/people/1/_update', data)
+                .reply(200);
 
-            est.mGet([{_id:1},{_id:2}], function (err, docs) {
-                expect(docs).to.be.an('array');
-                expect(docs).to.have.length(1);
+            est.update('1', data, function (err, result) {
+                expect(server.isDone()).to.be.true;
                 done();
             });
         });
     });
+
 
     describe('query()', function () {
 
@@ -344,17 +393,17 @@ describe('ESType', function () {
         });
     });
 
-    describe('searchRaw()', function () {
+    describe('search()', function () {
 
         it('should send request with _search command in url', function (done) {
             var est = new ESType(esIndexConfig);
             var server = nock(esServerUrl)
                 // truncate parameters
-                .filteringRequestBody(function () { return undefined; })
+                .filteringRequestBody(skipRequestBody)
                 .get('/myindex/people/_search')
                 .reply(200);
 
-            est.searchRaw({}, function (err, resp) {
+            est.search({}, function (err, resp) {
                 expect(server.isDone()).to.be.true;
                 done();
             });
@@ -367,7 +416,7 @@ describe('ESType', function () {
                 .get('/myindex/people/_search', query)
                 .reply(200);
 
-            est.searchRaw(query, function (err, docs) {
+            est.search(query, function (err, docs) {
                 expect(server.isDone()).to.be.true;
                 done();
             });
@@ -381,7 +430,7 @@ describe('ESType', function () {
                 .get('/myindex/people/_search', query)
                 .reply(200, resp);
 
-            est.searchRaw(query, function (err, result) {
+            est.search(query, function (err, result) {
                 expect(result).to.deep.equal(resp);
                 done();
             });
@@ -389,23 +438,5 @@ describe('ESType', function () {
         });
     });
 
-    describe('search()', function () {
-
-        it('should return array of hits contents', function (done) {
-            var est = new ESType(esIndexConfig);
-            var content = [{_id: 1, name: 'foo'}, {_id: 2, name: 'foobar'}];
-            var resp = {hits: {hits: [{_source: content[0]}, {_source: content[1]}]}};
-            var query = {query: {term: {name: 'foo'}}};
-            var server = nock(esServerUrl)
-                .get('/myindex/people/_search', query)
-                .reply(200, resp);
-
-            est.search(query, function (err, result) {
-                expect(result).to.deep.equal(content);
-                done();
-            });
-
-        });
-    });
 
 });

@@ -21,35 +21,29 @@ ESType.prototype = {
 
     constructor: ESType,
 
-    query: function (qs, data, cb) {
-        this.request.get.apply(this.request, arguments);
+    index: function (doc, cb) {
+        this.request.put(doc._id, doc, cb);
     },
 
-    searchRaw: function (config, cb) {
-        this.query('_search', config, cb);
-    },
-
-    search: function (config, cb) {
-        this.searchRaw(config, function (err, resp) {
-            if (err) {
-                return cb(err, null);
+    delete: function (doc, cb) {
+        var _id;
+        if (typeof doc === 'string' || typeof doc === 'number') {
+            _id = doc;
+        } else {
+            _id = doc._id;
+            if (typeof _id === 'undefined' || typeof _id === 'object') {
+                throw new TypeError('Can not delete document because it does not have _id');
             }
-            var parsed = parse(resp);
-            cb(parsed.error, parsed.result);
-        });
+        }
+
+        this.request.del(_id, cb);
+    },
+
+    update: function (id, config, cb) {
+        this.request.post(id + '/_update', config, cb);
     },
 
     getById: function (id, cb) {
-        this.getByIdRaw(id, function (err, resp) {
-            if (err) {
-                return cb(err, null);
-            }
-            var parsedResp = parse(resp);
-            cb(parsedResp.error, parsedResp.result);
-        });
-    },
-
-    getByIdRaw: function (id, cb) {
         if (!/^(number|string)$/.test(typeof id)) {
             throw new TypeError('Id must be number or string!');
         }
@@ -57,16 +51,6 @@ ESType.prototype = {
     },
 
     mGetById: function (ids, cb) {
-        this.mGetByIdRaw(ids, function (err, resp) {
-            if (err) {
-                return cb(err, null);
-            }
-            var parsedResp = parse(resp);
-            cb(parsedResp.error, parsedResp.result);
-        });
-    },
-
-    mGetByIdRaw: function (ids, cb) {
         if (!Array.isArray(ids)) {
             throw new TypeError('First argument of multi get requests must be of array type!');
         }
@@ -75,20 +59,18 @@ ESType.prototype = {
     },
 
     mGet: function (docs, cb) {
-        this.mGetRaw(docs, function (err, resp) {
-            if (err) {
-                return cb(err, null);
-            }
-            var parsedResp = parse(resp);
-            cb(parsedResp.error, parsedResp.result);
-        })
-    },
-
-    mGetRaw: function (docs, cb) {
         if (!Array.isArray(docs)) {
             throw new TypeError('First argument of multi get requests must be of array type!');
         }
         this.request.get('_mget', {docs: docs}, cb);
+    },
+
+    query: function (qs, data, cb) {
+        this.request.get.apply(this.request, arguments);
+    },
+
+    search: function (config, cb) {
+        this.query('_search', config, cb);
     }
 };
 

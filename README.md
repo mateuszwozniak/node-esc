@@ -21,52 +21,141 @@ esi.tweet.getById(tweetId, function (err, tweet) {
 
 ## API
 Each type added to ESIndex instance has following methods:
-###getByIdRaw(id, callback)
-get document by id (http://www.elasticsearch.org/guide/reference/api/get.html) (number or string) and pass raw data retrieved from ElasticSearch.
+###query(urlParam, respBody, callback)
+call index with urlParam added to url and respBody passed as responseBody, and pass ElasicSearch response to callback.
+With this method you are able to do any operation on type.
 ```javascript
-    esi.tweet.getByIdRaw(1, function (err, doc) {
+    // search for tweets by user
+    esi.tweet.query('_search', {query: {term: {user: 'foobar'}}}, function (err, resp) {
+        console.log(resp);
+        /**
+        logs
+        {
+            timed_out : false,
+            hits : {
+                max_score : 0.30685282,
+                total : 2,
+                hits : [
+                {
+                    _index : "twitter",
+                    _id : "1",
+                    _score : 0.30685282,
+                    _type : "tweet",
+                    _source : {
+                        message : "lorem ipsum",
+                        user : "foo"
+                    }
+                },
+                {
+                    _index : "twitter",
+                    _id : "3",
+                    _score : 0.30685282,
+                    _type : "tweet",
+                    _source : {
+                        message : "bar baz qux",
+                        user : "foo"
+                        }
+                    }
+                ]
+            },
+            took : 10,
+            _shards : {
+                failed : 0,
+                successful : 5,
+                total : 5
+            }
+        }
+
+        */
+    });
+```
+
+###index(id, data, callback)
+add (or update) document to index (http://www.elasticsearch.org/guide/reference/api/index_.html)
+When first parameter (id) is absent then _id from data will be used
+```javascript
+    esi.tweet.index(1, {user: 'foo', message: 'lorem ipsum'}, function (err, resp) {
+        console.log(resp);
+        /**
+        logs response from ElasticSearch:
+        {
+            ok : true,
+            _index : "twitter",
+            _id : "1",
+            _version : 1,
+            _type : "tweet"
+        }
+       */
+   });
+```
+
+###delete(id/doc, callback)
+delete document (http://www.elasticsearch.org/guide/reference/api/delete.html) with passed id (when first param is object then use _id as document identifier)
+```javascript
+    esi.tweet.delete(1, function (err, resp) {
+        console.log(resp);
+        /**
+        logs response from ElasticSearch:
+        {
+             ok : true,
+             _index : "twitter",
+             _id : "1",
+             _version : 2,
+             _type : "tweet",
+             found : true
+        }
+       */
+   });
+```
+
+###update(id, configObject, callback)
+update document with passed id. Send configObject as response body (http://www.elasticsearch.org/guide/reference/api/update.html)
+```javascript
+    esi.tweet.update(1, {doc: {message: 'new message content'}}, function (err, resp) {
+        console.log(resp);
+        /**
+        logs response from ElasticSearch:
+        {
+            ok : true,
+            _index : "twitter",
+            _id : "1",
+            _version : 2,
+            _type : "tweet"
+        }
+       */
+   });
+```
+
+###getById(id, callback)
+get document by id (http://www.elasticsearch.org/guide/reference/api/get.html) (number or string) and pass response from ElasticSearch to callback.
+```javascript
+    esi.tweet.getById(1, function (err, doc) {
         console.log(doc);
         /**
-        logs whole response from ElasticSearch e.g:
+        logs response from ElasticSearch e.g:
             {
                 _id: 1,
-                _index: 'twitter',
-                _type: 'tweet',
+                _index: "twitter",
+                _type: "tweet",
                 exists: true,
                 _source: {
                     _id:0,
-                    user: 'foo',
-                    message: 'foo bar baz',
-                    date: '2012-11-10T12:10:10'
+                    user: "foo",
+                    message: "foo bar baz",
+                    date: "2012-11-10T12:10:10"
                 }
             }
         */
     });
 ```
-###getById(id, callback)
-get document by id, but return only document content (_source property from result) or null if document does not exist.
-```javascript
-    esi.tweet.getById(1, function (err, doc) {
-        console.log(doc);
-        /**
-        logs only _source value e.g:
-            {
-                _id:0,
-                user: 'foo',
-                message: 'foo bar baz',
-                date: '2012-11-10T12:10:10'
-            }
-        */
-    });
-```
 
-###mGetByIdRaw(ids, callback)
-get multiple documents by array of ids () and return whole ElasticSearch response
+###mGetById(ids, callback)
+get multiple documents by array of ids () and pass response from ElasticSearch to callback.
 ```javascript
-    esi.tweet.mGetByIdRaw([1, 2], function (err, docs) {
+    esi.tweet.mGetById([1, 2], function (err, docs) {
         console.log(docs);
         /**
-        logs whole response from ElasticSearch e.g:
+        logs response from ElasticSearch e.g:
             {
                 docs: [
                     {
@@ -93,32 +182,13 @@ get multiple documents by array of ids () and return whole ElasticSearch respons
     });
 ```
 
-###mGetByIdRaw(ids, callback)
-get multiple documents by array of ids () and return only content of existing documents (as array)
+###search(searchConfig, callback)
+execute search in type, with searchConfig passed as request body (http://www.elasticsearch.org/guide/reference/api/search/request-body.html) and pass ElasticSearch reponse to callback.
 ```javascript
-    esi.tweet.mGetByIdRaw([1, 2], function (err, docs) {
-        console.log(docs);
-        /**
-        logs whole response from ElasticSearch e.g:
-            [
-                {
-                    _id:0,
-                    user: 'foo',
-                    message: 'foo bar baz',
-                    date: '2012-11-10T12:10:10'
-                }
-            ]
-        */
-    });
-```
-
-###searchRaw(searchConfig, callback)
-execute search in type, with searchConfig passed as request body (http://www.elasticsearch.org/guide/reference/api/search/request-body.html) and return raw ElasticSearch reponse
-```javascript
-    esi.tweet.searchRaw({query: {term: {message: 'foo'}}}, function (err, results) {
+    esi.tweet.search({query: {term: {message: 'foo'}}}, function (err, results) {
         console.log(results);
         /**
-        logs whole response from ElasticSearch e.g:
+        logs response from ElasticSearch e.g:
             {
                 _shards: {
                     total: 5,
@@ -147,23 +217,3 @@ execute search in type, with searchConfig passed as request body (http://www.ela
     });
 ```
 
-###search(searchConfig, callback)
-execute search in type with search config passed as request body and return only content objects of hits array
-```javascript
-    esi.tweet.search({query: {term: {message: 'foo'}}}, function (err, results) {
-        console.log(results);
-        /**
-        logs whole response from ElasticSearch e.g:
-            [
-                {
-                    _id:0,
-                    user: 'foo',
-                    message: 'foo bar baz',
-                    date: '2012-11-10T12:10:10'
-                }
-            ]
-        */
-    });
-```
-
-## more coming soon...
