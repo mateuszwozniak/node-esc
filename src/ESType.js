@@ -22,7 +22,11 @@ ESType.prototype = {
     constructor: ESType,
 
     index: function (doc, cb) {
-        this.request.put(doc._id, doc, cb);
+        if (typeof doc._id === 'undefined') {
+            return this.request.post(doc, cb);
+        } else {
+            return this.request.put(doc._id, doc, cb);
+        }
     },
 
     delete: function (doc, cb) {

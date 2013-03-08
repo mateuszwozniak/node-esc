@@ -32,6 +32,8 @@ ESIndex.prototype = {
         if (typeof extend === 'object') {
             injectProperties(this[typeName], extend);
         }
+
+        return this[typeName];
     }
 };
 

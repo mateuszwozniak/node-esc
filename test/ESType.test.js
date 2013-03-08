@@ -37,7 +37,7 @@ describe('ESType', function () {
 
     describe('index()', function () {
 
-        it('should call server with PUT request', function (done) {
+        it('should call server with PUT request when has _id property', function (done) {
             var est = new ESType(esIndexConfig);
             var server = nock(esServerUrl)
                 .filteringPath(skipArgsInPath)
@@ -45,7 +45,7 @@ describe('ESType', function () {
                 .put('/myindex/people/')
                 .reply(200);
 
-            est.index({}, function (err, result) {
+            est.index({_id: 1}, function (err, result) {
                 expect(server.isDone()).to.be.true;
                 done();
             });
@@ -75,6 +75,20 @@ describe('ESType', function () {
                 expect(server.isDone()).to.be.true;
                 done();
             });
+        });
+
+        it('should set POST request when document does not have _id', function (done) {
+            var est = new ESType(esIndexConfig);
+            var data = {foo: 'bar'};
+            var server = nock(esServerUrl)
+                .post('/myindex/people/', data)
+                .reply(200);
+
+            est.index(data, function (err, result) {
+                expect(server.isDone()).to.be.true;
+                done();
+            });
+
         });
     });
 
